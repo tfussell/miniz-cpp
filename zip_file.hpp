@@ -1,0 +1,124 @@
+#pragma once
+
+#define ZIP_FILE_IOSTREAM
+
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
+#ifdef ZIP_FILE_IOSTREAM
+#include <iostream>
+#include <sstream>
+#endif
+
+struct mz_zip_archive_tag;
+
+struct zip_info
+{
+    std::string filename;
+    struct
+    {
+        int year;
+        int month;
+        int day;
+        int hours;
+        int minutes;
+        int seconds;
+    } date_time;
+    std::string comment;
+    std::string extra;
+    uint16_t create_system;
+    uint16_t create_version;
+    uint16_t extract_version;
+    uint16_t flag_bits;
+    std::size_t volume;
+    uint32_t internal_attr;
+    uint32_t external_attr;
+    std::size_t header_offset;
+    uint32_t crc;
+    std::size_t compress_size;
+    std::size_t file_size;
+};
+
+class zip_file
+{
+public:
+    zip_file();
+    zip_file(const std::string &filename);
+    zip_file(const std::vector<unsigned char> &bytes);
+#ifdef ZIP_FILE_IOSTREAM
+    zip_file(std::istream &stream);
+#endif
+    ~zip_file();
+    
+    // to/from file
+    void load(const std::string &filename);
+    void save(const std::string &filename);
+    
+    // to/from byte vector
+    void load(const std::vector<unsigned char> &bytes);
+    void save(std::vector<unsigned char> &bytes);
+    
+    // to/from iostream
+#ifdef ZIP_FILE_IOSTREAM
+    void load(std::istream &stream);
+    void save(std::ostream &stream);
+#endif
+    
+    void reset();
+    
+    zip_info getinfo(const std::string &name);
+    
+    std::vector<zip_info> infolist();
+    std::vector<std::string> namelist();
+
+#ifdef ZIP_FILE_IOSTREAM
+    std::ostream &open(const std::string &name);
+    std::ostream &open(const zip_info &name);
+#endif
+    
+    void extract(const std::string &name);
+    void extract(const std::string &name, const std::string &path);
+    void extract(const zip_info &name);
+    void extract(const zip_info &name, const std::string &path);
+    
+    void extractall();
+    void extractall(const std::string &path);
+    void extractall(const std::string &path, const std::vector<std::string> &members);
+    void extractall(const std::string &path, const std::vector<zip_info> &members);
+    
+    void printdir();
+#ifdef ZIP_FILE_IOSTREAM
+    void printdir(std::ostream &stream);
+#endif
+    
+    std::string read(const std::string &name);
+    std::string read(const zip_info &name);
+    
+    std::pair<bool, std::string> testzip();
+    
+    void write(const std::string &filename);
+    void write(const std::string &filename, const std::string &arcname);
+    
+    void writestr(const std::string &arcname, const std::string &bytes);
+    void writestr(const zip_info &arcname, const std::string &bytes);
+    
+    std::string comment;
+    
+private:
+    void start_read();
+    void start_write();
+    
+    void append_comment();
+    void remove_comment();
+
+    zip_info getinfo(int index);
+
+    std::unique_ptr<mz_zip_archive_tag> archive_;
+    std::vector<char> buffer_;
+    
+#ifdef ZIP_FILE_IOSTREAM
+    std::stringstream open_stream_;
+#endif
+};
