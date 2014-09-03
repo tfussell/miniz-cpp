@@ -1,21 +1,36 @@
 #pragma once
 
-#define ZIP_FILE_IOSTREAM
-
 #include <cstdint>
+#include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
-
-#ifdef ZIP_FILE_IOSTREAM
-#include <iostream>
-#include <sstream>
-#endif
 
 struct mz_zip_archive_tag;
 
 struct zip_info
 {
+    zip_info()
+        : create_system(0),
+        create_version(0),
+        extract_version(0),
+        flag_bits(0),
+        volume(0),
+        internal_attr(0),
+        external_attr(0),
+        header_offset(0),
+        crc(0),
+        compress_size(0),
+        file_size(0)
+    {
+        date_time.year = 1980;
+        date_time.month = 0;
+        date_time.day = 0;
+        date_time.hours = 0;
+        date_time.minutes = 0;
+        date_time.seconds = 0;
+    }
     std::string filename;
     struct
     {
@@ -47,9 +62,7 @@ public:
     zip_file();
     zip_file(const std::string &filename);
     zip_file(const std::vector<unsigned char> &bytes);
-#ifdef ZIP_FILE_IOSTREAM
     zip_file(std::istream &stream);
-#endif
     ~zip_file();
     
     // to/from file
@@ -61,22 +74,21 @@ public:
     void save(std::vector<unsigned char> &bytes);
     
     // to/from iostream
-#ifdef ZIP_FILE_IOSTREAM
     void load(std::istream &stream);
     void save(std::ostream &stream);
-#endif
     
     void reset();
+
+    bool has_file(const std::string &name);
+    bool has_file(const zip_info &name);
     
     zip_info getinfo(const std::string &name);
     
     std::vector<zip_info> infolist();
     std::vector<std::string> namelist();
 
-#ifdef ZIP_FILE_IOSTREAM
     std::ostream &open(const std::string &name);
     std::ostream &open(const zip_info &name);
-#endif
     
     void extract(const std::string &name);
     void extract(const std::string &name, const std::string &path);
@@ -89,9 +101,7 @@ public:
     void extractall(const std::string &path, const std::vector<zip_info> &members);
     
     void printdir();
-#ifdef ZIP_FILE_IOSTREAM
     void printdir(std::ostream &stream);
-#endif
     
     std::string read(const std::string &name);
     std::string read(const zip_info &name);
@@ -103,6 +113,8 @@ public:
     
     void writestr(const std::string &arcname, const std::string &bytes);
     void writestr(const zip_info &arcname, const std::string &bytes);
+    
+    std::string get_filename() const { return filename_; }
     
     std::string comment;
     
@@ -117,8 +129,6 @@ private:
 
     std::unique_ptr<mz_zip_archive_tag> archive_;
     std::vector<char> buffer_;
-    
-#ifdef ZIP_FILE_IOSTREAM
     std::stringstream open_stream_;
-#endif
+    std::string filename_;
 };

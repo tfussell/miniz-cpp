@@ -1,15 +1,17 @@
+#include <algorithm>
+#include <cassert>
+#include <cstring>
 #include <fstream>
 
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz.c"
-
 #ifdef _WIN32
+#define NOMINMAX
 #include <Windows.h>
-#else
-
 #endif
 
 #include "zip_file.hpp"
+
+#define MINIZ_HEADER_FILE_ONLY
+#include "miniz.c"
 
 namespace {
 
@@ -18,15 +20,19 @@ std::string get_working_directory()
 #ifdef _WIN32
     TCHAR buffer[MAX_PATH];
     GetCurrentDirectory(MAX_PATH, buffer);
-    return buffer;
-#endif
+    std::basic_string<TCHAR> working_directory(buffer);
+    return std::string(working_directory.begin(), working_directory.end());
+#else
     return "";
+#endif
 }
     
 #ifdef _WIN32
 char directory_separator = '\\';
+char alt_directory_separator = '/';
 #else
 char directory_separator = '/';
+char alt_directory_separator = '\\';
 #endif
     
 std::string join_path(const std::vector<std::string> &parts)
@@ -39,26 +45,43 @@ std::string join_path(const std::vector<std::string> &parts)
         
         if(i++ != parts.size() - 1)
         {
-            joined.append(1, directory_separator);
+            joined.append(1, '/');
         }
     }
     return joined;
 }
     
-std::vector<std::string> split_path(const std::string &path)
+std::vector<std::string> split_path(const std::string &path, char delim = directory_separator)
 {
     std::vector<std::string> split;
     std::string::size_type previous_index = 0;
-    auto separator_index = path.find(directory_separator);
+    auto separator_index = path.find(delim);
     
     while(separator_index != std::string::npos)
     {
-        split.push_back(path.substr(previous_index, separator_index));
+        auto part = path.substr(previous_index, separator_index - previous_index);
+        if(part != "..")
+        {
+            split.push_back(part);
+        }
+        else
+        {
+            split.pop_back();
+        }
         previous_index = separator_index + 1;
-        separator_index = path.find(previous_index, directory_separator);
+        separator_index = path.find(delim, previous_index);
     }
     
     split.push_back(path.substr(previous_index));
+
+    if(split.size() == 1 && delim == directory_separator)
+    {
+        auto alternative = split_path(path, alt_directory_separator);
+        if(alternative.size() > 1)
+        {
+            return alternative;
+        }
+    }
     
     return split;
 }
@@ -124,6 +147,19 @@ uint32_t crc32buf(const char *buf, std::size_t len)
     return ~oldcrc32;
 }
 
+tm safe_localtime(const time_t &t)
+{
+#ifdef _WIN32
+    tm time;
+    localtime_s(&time, &t);
+    return time;
+#else
+    tm *time = localtime(&t);
+    assert(time != nullptr);
+    return *time;
+#endif
+}
+
 } // namespace
 
 zip_file::zip_file() : archive_(new mz_zip_archive())
@@ -154,13 +190,14 @@ zip_file::~zip_file()
 void zip_file::load(std::istream &stream)
 {
     reset();
-    buffer_.assign(std::istreambuf_iterator<char>(stream), {});
+    buffer_.assign(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
     remove_comment();
     start_read();
 }
 
 void zip_file::load(const std::string &filename)
 {
+    filename_ = filename;
     std::ifstream stream(filename, std::ios::binary);
     load(stream);
 }
@@ -175,6 +212,7 @@ void zip_file::load(const std::vector<unsigned char> &bytes)
 
 void zip_file::save(const std::string &filename)
 {
+    filename_ = filename;
     std::ofstream stream(filename, std::ios::binary);
     save(stream);
 }
@@ -190,7 +228,7 @@ void zip_file::save(std::ostream &stream)
     {
         mz_zip_writer_end(archive_.get());
     }
-
+    
     if(archive_->m_zip_mode == MZ_ZIP_MODE_INVALID)
     {
         start_read();
@@ -225,7 +263,7 @@ void zip_file::append_comment()
 {
     if(!comment.empty())
     {
-        uint16_t comment_length = comment.length();
+        auto comment_length = std::min((uint16_t)comment.length(), std::numeric_limits<uint16_t>::max());
         buffer_[buffer_.size() - 2] = comment_length & 0xFF;
         buffer_[buffer_.size() - 1] = comment_length >> 8 & 0xFF;
         std::copy(comment.begin(), comment.end(), std::back_inserter(buffer_));
@@ -234,6 +272,8 @@ void zip_file::append_comment()
 
 void zip_file::remove_comment()
 {
+    if(buffer_.empty()) return;
+    
     std::size_t position = buffer_.size() - 1;
     
     for(; position >= 3; position--)
@@ -332,13 +372,13 @@ zip_info zip_file::getinfo(int index)
     result.file_size = (std::size_t)stat.m_uncomp_size;
     result.header_offset = (std::size_t)stat.m_local_header_ofs;
     result.crc = stat.m_crc32;
-    tm *time = localtime(&stat.m_time);
-    result.date_time.year = 1900 + time->tm_year;
-    result.date_time.month = 1 + time->tm_mon;
-    result.date_time.day = time->tm_mday;
-    result.date_time.hours = time->tm_hour;
-    result.date_time.minutes = time->tm_min;
-    result.date_time.seconds = time->tm_sec;
+    auto time = safe_localtime(stat.m_time);
+    result.date_time.year = 1900 + time.tm_year;
+    result.date_time.month = 1 + time.tm_mon;
+    result.date_time.day = time.tm_mday;
+    result.date_time.hours = time.tm_hour;
+    result.date_time.minutes = time.tm_min;
+    result.date_time.seconds = time.tm_sec;
     result.flag_bits = stat.m_bit_flag;
     result.internal_attr = stat.m_internal_attr;
     result.external_attr = stat.m_external_attr;
@@ -376,7 +416,8 @@ std::size_t write_callback(void *opaque, mz_uint64 file_ofs, const void *pBuf, s
     
     if(file_ofs + n > buffer->size())
     {
-        buffer->resize(file_ofs + n);
+        auto new_size = (std::vector<char>::size_type)(file_ofs + n);
+        buffer->resize(new_size);
     }
 
     for(std::size_t i = 0; i < n; i++)
@@ -470,7 +511,7 @@ void zip_file::writestr(const std::string &arcname, const std::string &bytes)
         start_write();
     }
 
-    if(!mz_zip_writer_add_mem(archive_.get(), arcname.c_str(), bytes.data(), bytes.size(), MZ_DEFAULT_COMPRESSION))
+    if(!mz_zip_writer_add_mem(archive_.get(), arcname.c_str(), bytes.data(), bytes.size(), MZ_BEST_COMPRESSION))
     {
         throw std::runtime_error("write error");
     }
@@ -490,7 +531,7 @@ void zip_file::writestr(const zip_info &info, const std::string &bytes)
     
     auto crc = crc32buf(bytes.c_str(), bytes.size());
     
-    if(!mz_zip_writer_add_mem_ex(archive_.get(), info.filename.c_str(), bytes.data(), bytes.size(), info.comment.c_str(), (mz_uint16)info.comment.size(), MZ_DEFAULT_COMPRESSION, 0, crc))
+    if(!mz_zip_writer_add_mem_ex(archive_.get(), info.filename.c_str(), bytes.data(), bytes.size(), info.comment.c_str(), (mz_uint16)info.comment.size(), MZ_BEST_COMPRESSION, 0, crc))
     {
         throw std::runtime_error("write error");
     }
@@ -512,6 +553,23 @@ std::string zip_file::read(const zip_info &info)
 std::string zip_file::read(const std::string &name)
 {
     return read(getinfo(name));
+}
+
+bool zip_file::has_file(const std::string &name)
+{
+    if(archive_->m_zip_mode != MZ_ZIP_MODE_READING)
+    {
+        start_read();
+    }
+
+    int index = mz_zip_reader_locate_file(archive_.get(), name.c_str(), nullptr, 0);
+
+    return index != -1;
+}
+
+bool zip_file::has_file(const zip_info &name)
+{
+    return has_file(name.filename);
 }
 
 std::vector<zip_info> zip_file::infolist()
@@ -670,4 +728,3 @@ std::pair<bool, std::string> zip_file::testzip()
 
     return {true, ""};
 }
-
