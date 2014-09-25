@@ -1,11 +1,12 @@
-#define ZIP_TEST
-
+#include <array>
 #include <cassert>
 #include <fstream>
 
 #include "zip_file.hpp"
 
-const unsigned char test_xlsx[] = {
+namespace {
+
+static const unsigned char test_xlsx[] = {
   0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x08, 0x00, 0x79, 0x9a,
   0xff, 0x44, 0x9d, 0x9e, 0xa3, 0xe3, 0xe4, 0x00, 0x00, 0x00, 0x4b, 0x02,
   0x00, 0x00, 0x0b, 0x00, 0x14, 0x00, 0x5f, 0x72, 0x65, 0x6c, 0x73, 0x2f,
@@ -41008,25 +41009,17 @@ const unsigned char test_xlsx[] = {
   0x06, 0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x0c, 0x00, 0x0d, 0x03, 0x00,
   0x00, 0xc4, 0x7e, 0x07, 0x00, 0x00, 0x00
 };
-unsigned int test_xlsx_len = 492007;
+static const unsigned int test_xlsx_len = 492007;
 
-const std::string existing_file = "test.xlsx";
-const std::string temp_file = "temp.zip";
-const std::string expected_content_types_string = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"xml\" ContentType=\"application/xml\"/><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"jpeg\" ContentType=\"image/jpg\"/><Default Extension=\"png\" ContentType=\"image/png\"/><Default Extension=\"bmp\" ContentType=\"image/bmp\"/><Default Extension=\"gif\" ContentType=\"image/gif\"/><Default Extension=\"tif\" ContentType=\"image/tif\"/><Default Extension=\"pdf\" ContentType=\"application/pdf\"/><Default Extension=\"mov\" ContentType=\"application/movie\"/><Default Extension=\"vml\" ContentType=\"application/vnd.openxmlformats-officedocument.vmlDrawing\"/><Default Extension=\"xlsx\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"/><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/><Override PartName=\"/docProps/app.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\"/><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/><Override PartName=\"/xl/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>\n";
-const std::string expected_atxt_string = "aaa\r\nbbb\r\nccc\n\n\n";
-const std::string expected_printdir_string = "  Length      Date    Time    Name\n---------  ---------- -----   ----\n      587  07/31/2014 19:19   _rels/.rels\n      299  07/31/2014 19:19   docProps/core.xml\n      231  07/31/2014 19:19   docProps/app.xml\n      415  07/31/2014 19:19   xl/workbook.xml\n      697  07/31/2014 19:19   xl/_rels/workbook.xml.rels\n    26038  07/31/2014 19:19   xl/theme/theme1.xml\n      291  07/31/2014 19:19   xl/theme/_rels/theme1.xml.rels\n     6415  07/31/2014 19:19   xl/worksheets/sheet1.xml\n      223  07/31/2014 19:19   xl/sharedStrings.xml\n     3188  07/31/2014 19:19   xl/styles.xml\n   489200  07/31/2014 19:19   xl/media/image1.png\n     1736  07/31/2014 19:19   [Content_Types].xml\n---------                     -------\n   529320                     12 files\n";
+static const char *existing_file = "test.xlsx";
+static const char *temp_file = "temp.zip";
+static const char *expected_content_types_string = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"xml\" ContentType=\"application/xml\"/><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"jpeg\" ContentType=\"image/jpg\"/><Default Extension=\"png\" ContentType=\"image/png\"/><Default Extension=\"bmp\" ContentType=\"image/bmp\"/><Default Extension=\"gif\" ContentType=\"image/gif\"/><Default Extension=\"tif\" ContentType=\"image/tif\"/><Default Extension=\"pdf\" ContentType=\"application/pdf\"/><Default Extension=\"mov\" ContentType=\"application/movie\"/><Default Extension=\"vml\" ContentType=\"application/vnd.openxmlformats-officedocument.vmlDrawing\"/><Default Extension=\"xlsx\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"/><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/><Override PartName=\"/docProps/app.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\"/><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/><Override PartName=\"/xl/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>\n";
+static const char *expected_atxt_string = "aaa\r\nbbb\r\nccc\n\n\n";
+static const char *expected_printdir_string = "  Length      Date    Time    Name\n---------  ---------- -----   ----\n      587  07/31/2014 19:19   _rels/.rels\n      299  07/31/2014 19:19   docProps/core.xml\n      231  07/31/2014 19:19   docProps/app.xml\n      415  07/31/2014 19:19   xl/workbook.xml\n      697  07/31/2014 19:19   xl/_rels/workbook.xml.rels\n    26038  07/31/2014 19:19   xl/theme/theme1.xml\n      291  07/31/2014 19:19   xl/theme/_rels/theme1.xml.rels\n     6415  07/31/2014 19:19   xl/worksheets/sheet1.xml\n      223  07/31/2014 19:19   xl/sharedStrings.xml\n     3188  07/31/2014 19:19   xl/styles.xml\n   489200  07/31/2014 19:19   xl/media/image1.png\n     1736  07/31/2014 19:19   [Content_Types].xml\n---------                     -------\n   529320                     12 files\n";
 
 void remove_temp_file()
 {
-    std::remove(temp_file.c_str());
-}
-
-void make_temp_directory()
-{
-}
-
-void remove_temp_directory()
-{
+    std::remove(temp_file);
 }
 
 bool files_equal(const std::string &a, const std::string &b)
@@ -41080,7 +41073,7 @@ void test_load_bytes()
     std::ifstream in_stream(existing_file, std::ios::binary);
     while(in_stream)
     {
-        source_bytes.push_back((unsigned char)in_stream.get());
+        source_bytes.push_back(static_cast<unsigned char>(in_stream.get()));
     }
     f.load(source_bytes);
     f.save(temp_file);
@@ -41127,7 +41120,7 @@ void test_reset()
 void test_getinfo()
 {
     zip_file f(existing_file);
-    auto info = f.getinfo("[Content_Types].xml");
+    zip_info info = f.getinfo("[Content_Types].xml");
     assert(info.filename == "[Content_Types].xml");
 }
 
@@ -41196,7 +41189,7 @@ void test_printdir()
     zip_file f(existing_file);
     std::stringstream ss;
     f.printdir(ss);
-    auto printed = ss.str();
+    std::string printed = ss.str();
     assert(printed == expected_printdir_string);
 }
 
@@ -41264,14 +41257,16 @@ void test_comment()
 void write_existing()
 {
     std::ofstream stream(existing_file, std::ios::binary);
-    stream.write((const char *)test_xlsx, sizeof(test_xlsx));
+    std::array<char, test_xlsx_len> test_xlsx_chars = {{0}};
+    std::copy(test_xlsx, test_xlsx + test_xlsx_len, test_xlsx_chars.begin());
+    stream.write(test_xlsx_chars.data(), test_xlsx_chars.size());
     std::ofstream stream2("a.txt", std::ios::binary);
     stream2 << expected_atxt_string;
 }
 
 void remove_existing()
 {
-    std::remove(existing_file.c_str());
+    std::remove(existing_file);
     std::remove("a.txt");
 }
 
@@ -41302,11 +41297,11 @@ void test_zip()
     remove_existing();
 }
 
-#ifdef ZIP_TEST
+} // namespace
+
 int main()
 {
     test_zip();
     std::cout << "all tests passed" << std::endl;
     return 0;
 }
-#endif

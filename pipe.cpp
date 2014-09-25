@@ -10,6 +10,8 @@
 
 #include "zip_file.hpp"
 
+namespace {
+
 // Returns true if program is being run directly
 // If this is false, we assume that input will be given through stdin
 bool is_tty()
@@ -20,6 +22,8 @@ bool is_tty()
     return isatty(fileno(stdin)) != 0;
 #endif
 }
+
+} // namespace
 
 // Either 1. Print directory structure of zip file given as filename or piped through stdin
 // or 2. Print contents of file contained in aforementioned zip file
