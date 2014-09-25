@@ -11,26 +11,7 @@ struct mz_zip_archive_tag;
 
 struct zip_info
 {
-    zip_info()
-        : create_system(0),
-        create_version(0),
-        extract_version(0),
-        flag_bits(0),
-        volume(0),
-        internal_attr(0),
-        external_attr(0),
-        header_offset(0),
-        crc(0),
-        compress_size(0),
-        file_size(0)
-    {
-        date_time.year = 1980;
-        date_time.month = 0;
-        date_time.day = 0;
-        date_time.hours = 0;
-        date_time.minutes = 0;
-        date_time.seconds = 0;
-    }
+    zip_info();
     std::string filename;
     struct
     {

@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cstring>
 #include <fstream>
 
@@ -9,9 +8,7 @@
 #endif
 
 #include "zip_file.hpp"
-
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz.c"
+#include "miniz.h"
 
 namespace {
 
@@ -161,6 +158,27 @@ tm safe_localtime(const time_t &t)
 }
 
 } // namespace
+
+zip_info::zip_info()
+    : create_system(0),
+      create_version(0),
+      extract_version(0),
+      flag_bits(0),
+      volume(0),
+      internal_attr(0),
+      external_attr(0),
+      header_offset(0),
+      crc(0),
+      compress_size(0),
+      file_size(0)
+{
+    date_time.year = 1980;
+    date_time.month = 0;
+    date_time.day = 0;
+    date_time.hours = 0;
+    date_time.minutes = 0;
+    date_time.seconds = 0;
+}
 
 zip_file::zip_file() : archive_(new mz_zip_archive())
 {
