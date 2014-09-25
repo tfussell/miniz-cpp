@@ -41306,6 +41306,7 @@ void test_zip()
 int main()
 {
     test_zip();
+    std::cout << "all tests passed" << std::endl;
     return 0;
 }
 #endif
