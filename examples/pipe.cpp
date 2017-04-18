@@ -1,4 +1,7 @@
 #include <cstdio>
+#include <iostream>
+#include <string>
+#include <vector>
 
 // Platform-specific includes
 #ifdef _WIN32
@@ -8,7 +11,7 @@
 #include <unistd.h> // For fileno, isatty
 #endif
 
-#include "zip_file.hpp"
+#include <zip_file.hpp>
 
 namespace {
 
@@ -29,7 +32,7 @@ bool is_tty()
 // or 2. Print contents of file contained in aforementioned zip file
 int main(int argc, char *argv[])
 {
-    zip_file file;
+    miniz_cpp::zip_file file;
     std::vector<std::string> args;
     
     for(int i = 1; i < argc; i++)

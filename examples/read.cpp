@@ -1,4 +1,5 @@
-#include "zip_file.hpp"
+#include <iostream>
+#include <zip_file.hpp>
 
 int main(int argc, char *argv[])
 {
@@ -8,7 +9,7 @@ int main(int argc, char *argv[])
         return 0;
     }
     
-    zip_file file(argv[1]);
+    miniz_cpp::zip_file file(argv[1]);
     file.printdir();
     
     return 0;
