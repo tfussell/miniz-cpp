@@ -5146,7 +5146,7 @@ struct zip_info
     size_t volume = 0;
     uint32_t internal_attr = 0;
     uint32_t external_attr = 0;
-    ssize_t header_offset = 0;
+    size_t header_offset = 0;
     uint32_t crc = 0;
     size_t compress_size = 0;
     size_t file_size = 0;
