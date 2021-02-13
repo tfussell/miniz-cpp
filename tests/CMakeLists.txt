@@ -1,0 +1,5 @@
+if(${MINIZ_BUILD_TESTS})
+    add_executable(miniz-cpp.test test.cpp)
+    target_link_libraries(miniz-cpp.test PUBLIC miniz-cpp)
+    add_test(NAME miniz-cpp.test COMMAND miniz-cpp.test)
+endif()

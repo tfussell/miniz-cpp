@@ -1,26 +1,33 @@
 cmake_minimum_required(VERSION 3.2)
-project(miniz-cpp)
+project(miniz-cpp VERSION 1.0)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
-set(TEST_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.cpp)
+option(MINIZ_BUILD_TESTS "Build tests" OFF)
+option(MINIZ_BUILD_EXAMPLES "Build examples" OFF)
 
-add_executable(miniz-cpp.test ${TEST_SOURCE})
-target_include_directories(miniz-cpp.test
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(${MINIZ_BUILD_TESTS})
+    enable_testing()
+endif()
 
-set(EXAMPLE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/examples/pipe.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/examples/read.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/examples/write.cpp)
+set(include_dest "include/miniz-cpp-${miniz-cpp_VERSION}")
+set(lib_dest "lib/mini-cpp-${miniz-cpp_VERSION}")
 
-foreach(EXAMPLE_SOURCE IN ITEMS ${EXAMPLE_SOURCES})
-    get_filename_component(EXAMPLE_NAME ${EXAMPLE_SOURCE} NAME_WE)
-    set(EXAMPLE_EXECUTABLE example-${EXAMPLE_NAME})
+add_library(miniz-cpp INTERFACE)
+set_target_properties(miniz-cpp PROPERTIES LINKER_LANGUAGE CXX) 
+target_include_directories(
+    miniz-cpp
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:${include_dest}>
+)
 
-    add_executable(${EXAMPLE_EXECUTABLE} ${EXAMPLE_SOURCE})
+add_subdirectory(tests)
+add_subdirectory(examples)
 
-    target_include_directories(${EXAMPLE_EXECUTABLE}
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-endforeach()
+# install
+install(FILES zip_file.hpp DESTINATION ${include_dest})
+install(FILES miniz-cpp-config.cmake DESTINATION ${lib_dest})
