@@ -5651,9 +5651,19 @@ private:
             throw std::runtime_error("didn't find end of central directory signature");
         }
         
+        if (position + 1 >= buffer_.size())
+        {
+            throw std::runtime_error("central dictionary position invalid");
+        }
+        
         uint16_t length = static_cast<uint16_t>(buffer_[position + 1]);
         length = static_cast<uint16_t>(length << 8) + static_cast<uint16_t>(buffer_[position]);
         position += 2;
+        
+        if (position + length > buffer_.size())
+        {
+            throw std::runtime_error("comment too long");
+        }
         
         if(length != 0)
         {
