@@ -5676,7 +5676,7 @@ private:
 
         zip_info result;
 
-        result.filename = std::string(stat.m_filename, stat.m_filename + std::strlen(stat.m_filename));
+        result.filename = std::string(stat.m_filename, stat.m_filename + strlen(stat.m_filename));
         result.comment = std::string(stat.m_comment, stat.m_comment + stat.m_comment_size);
         result.compress_size = static_cast<std::size_t>(stat.m_comp_size);
         result.file_size = static_cast<std::size_t>(stat.m_uncomp_size);
