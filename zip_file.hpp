@@ -515,7 +515,7 @@ typedef unsigned short mz_uint16;
 typedef unsigned int mz_uint32;
 typedef unsigned int mz_uint;
 typedef long long mz_int64;
-typedef unsigned long long mz_uint64;
+typedef uint64_t mz_uint64;
 typedef int mz_bool;
 
 #define MZ_FALSE (0)
@@ -5570,7 +5570,7 @@ private:
             case MZ_ZIP_MODE_READING:
             {
                 mz_zip_archive archive_copy;
-            std::memset(&archive_copy, 0, sizeof(mz_zip_archive));
+              memset(&archive_copy, 0, sizeof(mz_zip_archive));
                 std::vector<char> buffer_copy(buffer_.begin(), buffer_.end());
                 
                 if(!mz_zip_reader_init_mem(&archive_copy, buffer_copy.data(), buffer_copy.size(), 0))
