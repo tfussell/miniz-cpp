@@ -2,7 +2,7 @@
 #include <cassert>
 #include <fstream>
 
-#include <zip_file.hpp>
+#include <zip.hpp>
 
 namespace {
 
