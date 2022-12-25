@@ -5183,7 +5183,10 @@ public:
     void load(std::istream &stream)
     {
         reset();
-        buffer_.assign(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
+        stream.seekg(0, std::ios::end);
+        buffer_.resize(stream.tellg());
+        stream.seekg(0);
+        stream.read(buffer_.data(), buffer_.size());
         remove_comment();
         start_read();
     }
