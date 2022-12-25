@@ -5183,7 +5183,10 @@ public:
     void load(std::istream &stream)
     {
         reset();
-        buffer_.assign(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
+        stream.seekg(0, std::ios::end);
+        buffer_.resize(stream.tellg());
+        stream.seekg(0);
+        stream.read(buffer_.data(), buffer_.size());
         remove_comment();
         start_read();
     }
@@ -5621,7 +5624,7 @@ private:
     {
         if(!comment.empty())
         {
-            auto comment_length = std::min(static_cast<uint16_t>(comment.length()), std::numeric_limits<uint16_t>::max());
+            auto comment_length = (std::min)(static_cast<uint16_t>(comment.length()), (std::numeric_limits<uint16_t>::max)());
             buffer_[buffer_.size() - 2] = static_cast<char>(comment_length);
             buffer_[buffer_.size() - 1] = static_cast<char>(comment_length >> 8);
             std::copy(comment.begin(), comment.end(), std::back_inserter(buffer_));
