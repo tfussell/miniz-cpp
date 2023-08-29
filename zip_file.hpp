@@ -21,6 +21,8 @@
 // @license: http://www.opensource.org/licenses/mit-license.php
 
 #pragma once
+#undef min
+#undef max
 
 #include <algorithm>
 #include <cstdint>
