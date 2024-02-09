@@ -5621,8 +5621,12 @@ private:
     {
         if(!comment.empty())
         {
-            auto comment_length = std::min(static_cast<uint16_t>(comment.length()), std::numeric_limits<uint16_t>::max());
-            buffer_[buffer_.size() - 2] = static_cast<char>(comment_length);
+#ifdef _WIN32
+			auto comment_length = (std::min)(static_cast<uint16_t>(comment.length()), (std::numeric_limits<uint16_t>::max)());
+#else
+			auto comment_length = std::min(static_cast<uint16_t>(comment.length()), std::numeric_limits<uint16_t>::max());
+#endif
+			buffer_[buffer_.size() - 2] = static_cast<char>(comment_length);
             buffer_[buffer_.size() - 1] = static_cast<char>(comment_length >> 8);
             std::copy(comment.begin(), comment.end(), std::back_inserter(buffer_));
         }
